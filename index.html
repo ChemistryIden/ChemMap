@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>嘉定区危化品行政处罚地图</title>
+  <style>
+    html,
+    body,
+    #map {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    #status {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      z-index: 999;
+      transform: translateX(-50%);
+      padding: 9px 15px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.14);
+      color: #333;
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      pointer-events: none;
+    }
+
+    .case-info {
+      width: 320px;
+      box-sizing: border-box;
+      padding: 4px 3px 2px;
+      color: #333;
+      font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    .case-title {
+      margin: 0 0 12px;
+      padding-bottom: 7px;
+      border-bottom: 1px solid #d8d8d8;
+      color: #c62828;
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .case-row {
+      margin: 8px 0;
+    }
+
+    .case-label {
+      display: block;
+      margin-bottom: 1px;
+      font-weight: 700;
+      color: #222;
+    }
+
+    .case-value {
+      display: block;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="status">正在加载地图数据...</div>
+
+  <script src="https://api.map.baidu.com/api?type=webgl&amp;v=1.0&amp;ak=gdXYlkri0SVHOko1syWS7RWktRULAZBi"></script>
+  <script src="map_data.js"></script>
+  <script>
+    const map = new BMapGL.Map("map");
+    map.centerAndZoom(new BMapGL.Point(121.265, 31.375), 12);
+    map.enableScrollWheelZoom(true);
+
+    const statusElement = document.getElementById("status");
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function createMarkerIcon(fillColor, strokeColor) {
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="44" viewBox="0 0 32 44">
+          <path d="M16 1.5C8.27 1.5 2 7.77 2 15.5c0 10.5 14 26.5 14 26.5s14-16 14-26.5C30 7.77 23.73 1.5 16 1.5Z"
+            fill="${fillColor}" stroke="${strokeColor}" stroke-width="2"/>
+          <circle cx="16" cy="15.5" r="5" fill="#fff" fill-opacity="0.95"/>
+        </svg>`;
+      const url = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+      return new BMapGL.Icon(url, new BMapGL.Size(32, 44), {
+        anchor: new BMapGL.Size(16, 43),
+        imageSize: new BMapGL.Size(32, 44)
+      });
+    }
+
+    const defaultMarkerIcon = createMarkerIcon("#e53935", "#b71c1c");
+    const selectedMarkerIcon = createMarkerIcon("#1976d2", "#0d47a1");
+    let selectedMarker = null;
+    let markerClickInProgress = false;
+    let markerCount = 0;
+
+    caseData.forEach((record, index) => {
+      const lng = Number(record.lng);
+      const lat = Number(record.lat);
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+        console.warn(`跳过无坐标记录 ${index + 1}:`, record["违法地址"]);
+        return;
+      }
+
+      const point = new BMapGL.Point(lng, lat);
+      const marker = new BMapGL.Marker(point, { icon: defaultMarkerIcon });
+      map.addOverlay(marker);
+      markerCount += 1;
+
+      marker.addEventListener("click", event => {
+        markerClickInProgress = true;
+        if (event.domEvent && typeof event.domEvent.stopPropagation === "function") {
+          event.domEvent.stopPropagation();
+        }
+
+        if (selectedMarker && selectedMarker !== marker) {
+          selectedMarker.setIcon(defaultMarkerIcon);
+        }
+        marker.setIcon(selectedMarkerIcon);
+        selectedMarker = marker;
+
+        const item = caseData[index];
+        const content = `
+          <div class="case-info">
+            <div class="case-title">${escapeHtml(item["当事人"])}</div>
+            <div class="case-row">
+              <span class="case-label">案由</span>
+              <span class="case-value">${escapeHtml(item["本案案由"])}</span>
+            </div>
+            <div class="case-row">
+              <span class="case-label">立案日期</span>
+              <span class="case-value">${escapeHtml(item["立案日期"])}</span>
+            </div>
+            <div class="case-row">
+              <span class="case-label">地址</span>
+              <span class="case-value">${escapeHtml(item["违法地址"])}</span>
+            </div>
+            <div class="case-row">
+              <span class="case-label">详细情况</span>
+              <span class="case-value">${escapeHtml(item["违法违规行为基本情况"])}</span>
+            </div>
+          </div>`;
+
+        const infoWindow = new BMapGL.InfoWindow(content, {
+          width: 340,
+          height: 0,
+          title: ""
+        });
+        map.openInfoWindow(infoWindow, point);
+
+        setTimeout(() => {
+          markerClickInProgress = false;
+        }, 0);
+      });
+    });
+
+    map.addEventListener("click", () => {
+      if (markerClickInProgress || !selectedMarker) {
+        return;
+      }
+
+      selectedMarker.setIcon(defaultMarkerIcon);
+      selectedMarker = null;
+      map.closeInfoWindow();
+    });
+
+    statusElement.textContent = `已加载 ${markerCount} 个点位`;
+    console.log(`地图加载完成：${caseData.length} 条记录，${markerCount} 个有效点位。`);
+  </script>
+</body>
+</html>
