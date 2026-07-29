@@ -2,43 +2,52 @@ name: Deploy maps to GitHub Pages
 
 on:
   push:
-      branches: [main]
-        workflow_dispatch:
+    branches: [main]
+  workflow_dispatch:
 
-        permissions:
-          contents: read
-            pages: write
-              id-token: write
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-              concurrency:
-                group: pages
-                  cancel-in-progress: true
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
-                  jobs:
-                    deploy:
-                        environment:
-                              name: github-pages
-                                    url: ${{ steps.deployment.outputs.page_url }}
-                                        runs-on: ubuntu-latest
-                                            steps:
-                                                  - uses: actions/checkout@v4
-                                                        - name: Prepare static site
-                                                                env:
-                                                                          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
-                                                                                  run: |
-                                                                                            test -n "$MAPBOX_ACCESS_TOKEN"
-                                                                                                      mkdir -p _site
-                                                                                                                rsync -a --exclude '.git' --exclude '.github' --exclude '_site' ./ _site/
-                                                                                                                          python3 - <<'PY'
-                                                                                                                                    import os
-                                                                                                                                              from pathlib import Path
-                                                                                                                                              
-                                                                                                                                                        config = Path("_site/recent-vehicle-camera-map/runtime-config.js")
-                                                                                                                                                                  token = os.environ["MAPBOX_ACCESS_TOKEN"]
-                                                                                                                                                                            if not token.startswith("pk."):
-                                                                                                                                                                                          raise SystemExit("MAPBOX_ACCESS_TOKEN must be a public Mapbox token")
-                                                                                                                                                                                                    source = config.read_text(encoding="utf-8")
-                                                                                                                                                                                                              placeholder = "__MAPBOX_ACCESS_TOKEN__"
-                                                                                                                                                                                                                        if placeholder not in source:
-                                                                                                                                                                                                                                      raise SystemExit("Mapbox token placeholder is missing")
-                                                                                                                                                                                                                                                config.write_text(source.re
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare static site
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          test -n "$MAPBOX_ACCESS_TOKEN"
+          mkdir -p _site
+          rsync -a --exclude '.git' --exclude '.github' --exclude '_site' ./ _site/
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          config = Path("_site/recent-vehicle-camera-map/runtime-config.js")
+          token = os.environ["MAPBOX_ACCESS_TOKEN"]
+          if not token.startswith("pk."):
+              raise SystemExit("MAPBOX_ACCESS_TOKEN must be a public Mapbox token")
+          source = config.read_text(encoding="utf-8")
+          placeholder = "__MAPBOX_ACCESS_TOKEN__"
+          if placeholder not in source:
+              raise SystemExit("Mapbox token placeholder is missing")
+          config.write_text(source.replace(placeholder, token), encoding="utf-8")
+          PY
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
