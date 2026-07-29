@@ -1,0 +1,1 @@
+window.TDT_RUNTIME_CONFIG={token:"__TIANDITU_API_KEY__"};
