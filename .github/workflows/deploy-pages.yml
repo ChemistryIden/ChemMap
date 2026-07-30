@@ -25,23 +25,41 @@ jobs:
       - name: Prepare static site
         env:
           MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+          AMAP_JS_KEY: ${{ secrets.AMAP_JS_KEY }}
+          AMAP_SECURITY_JS_CODE: ${{ secrets.AMAP_SECURITY_JS_CODE }}
         run: |
           test -n "$MAPBOX_ACCESS_TOKEN"
+          test -n "$AMAP_JS_KEY"
+          test -n "$AMAP_SECURITY_JS_CODE"
           mkdir -p _site
           rsync -a --exclude '.git' --exclude '.github' --exclude '_site' ./ _site/
           python3 - <<'PY'
           import os
           from pathlib import Path
 
-          config = Path("_site/recent-vehicle-camera-map/runtime-config.js")
-          token = os.environ["MAPBOX_ACCESS_TOKEN"]
-          if not token.startswith("pk."):
+          mapbox_config = Path("_site/recent-vehicle-camera-map/runtime-config.js")
+          mapbox_token = os.environ["MAPBOX_ACCESS_TOKEN"]
+          if not mapbox_token.startswith("pk."):
               raise SystemExit("MAPBOX_ACCESS_TOKEN must be a public Mapbox token")
-          source = config.read_text(encoding="utf-8")
-          placeholder = "__MAPBOX_ACCESS_TOKEN__"
-          if placeholder not in source:
+          mapbox_source = mapbox_config.read_text(encoding="utf-8")
+          mapbox_placeholder = "__MAPBOX_ACCESS_TOKEN__"
+          if mapbox_placeholder not in mapbox_source:
               raise SystemExit("Mapbox token placeholder is missing")
-          config.write_text(source.replace(placeholder, token), encoding="utf-8")
+          mapbox_config.write_text(mapbox_source.replace(mapbox_placeholder, mapbox_token), encoding="utf-8")
+
+          amap_config = Path("_site/recent-vehicle-camera-map-amap/runtime-config.js")
+          amap_source = amap_config.read_text(encoding="utf-8")
+          amap_values = {
+              "__AMAP_JS_KEY__": os.environ["AMAP_JS_KEY"],
+              "__AMAP_SECURITY_JS_CODE__": os.environ["AMAP_SECURITY_JS_CODE"],
+          }
+          for placeholder, value in amap_values.items():
+              if placeholder not in amap_source:
+                  raise SystemExit(f"AMap placeholder is missing: {placeholder}")
+              if not value.strip():
+                  raise SystemExit(f"AMap secret is empty: {placeholder}")
+              amap_source = amap_source.replace(placeholder, value)
+          amap_config.write_text(amap_source, encoding="utf-8")
           PY
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5

@@ -6,7 +6,7 @@
   <title>孙振团伙关联车辆近期卡口地图</title>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.26.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.26.0/mapbox-gl.js"></script>
-  <script src="runtime-config.js"></script>
+  <script src="runtime-config.js?v=20260730-jiaxing-2065"></script>
   <script src="map_data.js"></script>
   <style>
     :root{--navy:#0a1423;--panel:#0f1d2e;--panel2:#14243a;--line:#263b55;--ink:#ecf4fb;--muted:#8fa4b9;--cyan:#2dd4bf;--blue:#60a5fa;--amber:#fbbf24;--orange:#f59e0b;--red:#fb7185;--purple:#a78bfa}
@@ -88,7 +88,7 @@
     const asArray=value=>Array.isArray(value)?value:(typeof value==='string'?JSON.parse(value||'[]'):[]);
     const emptyCollection=()=>({type:'FeatureCollection',features:[]});
     const KEY_LOCATIONS=[
-      {name:'嘉行公路2605号',detail:'上海互赢物流 · 重点常去点位',coordinates:[121.23659683,31.46331631],locationNote:'嘉行公路2575号南30米邻近卡口定位',labelSide:'right'},
+      {name:'嘉行公路2065号',detail:'上海互赢物流 · 重点常去点位',coordinates:[121.24713704,31.43490708],locationNote:'高德门牌解析后离线换算为 WGS84 静态定位',labelSide:'right'},
       {name:'励学路1111号',detail:'上海品亚实业 · 重点常去点位',coordinates:[121.2986828290549,31.363326354318957],locationNote:'门牌地址静态定位',labelSide:'right'},
       {name:'丰兆路122号',detail:'车辆高频起止区域 · 重点常去点位',coordinates:[121.27344834,31.36405803],locationNote:'丰兆路—申裕路邻近卡口定位',labelSide:'left'}
     ];
