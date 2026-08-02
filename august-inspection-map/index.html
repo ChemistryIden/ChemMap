@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <meta name="description" content="上海市嘉定区 8 月企业检查计划点位 Mapbox 交互地图">
+  <title>嘉定区8月企业检查点位地图</title>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.26.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.26.0/mapbox-gl.js"></script>
+  <script src="runtime-config.js?v=20260803"></script>
+  <script src="map_data.js?v=20260803"></script>
+  <style>
+    :root{--ink:#12211d;--muted:#66736f;--line:#dce5e1;--paper:#f7faf8;--card:#fff;--green:#0d7558;--green-dark:#075c45;--mint:#dff5ec;--amber:#a45b00}
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden}body{background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}button{font:inherit}
+    .shell{display:grid;grid-template-columns:370px minmax(0,1fr);width:100%;height:100%}.panel{position:relative;z-index:4;display:flex;min-width:0;min-height:0;flex-direction:column;background:rgba(247,250,248,.98);border-right:1px solid var(--line);box-shadow:16px 0 38px rgba(25,54,44,.08)}
+    .heading{padding:28px 26px 20px;border-bottom:1px solid var(--line)}.eyebrow{display:flex;align-items:center;gap:8px;color:var(--green);font-size:12px;font-weight:700;letter-spacing:.08em}.eyebrow i{width:8px;height:8px;border-radius:50%;background:#16a174;box-shadow:0 0 0 4px rgba(22,161,116,.13)}
+    .heading h1{margin:12px 0 8px;font:700 31px/1.15 Georgia,"Songti SC",serif;letter-spacing:-.03em}.heading p{margin:0;color:var(--muted);font-size:13px;line-height:1.65}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}.summary div{display:flex;align-items:baseline;gap:7px;padding:10px 12px;background:#edf6f2;border:1px solid #d5ebe3;border-radius:10px}.summary b{color:var(--green-dark);font:700 22px Georgia,serif}.summary span{color:#567168;font-size:11px;white-space:nowrap}
+    .point-list{flex:1;min-height:0;margin:0;padding:12px 12px 18px;overflow:auto;list-style:none;scrollbar-width:thin;scrollbar-color:#b7cac3 transparent}.point-list li+li{margin-top:5px}.point{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;width:100%;align-items:center;padding:10px 9px;color:inherit;text-align:left;background:transparent;border:1px solid transparent;border-radius:12px;cursor:pointer;transition:.16s}.point:hover,.point:focus-visible,.point.active{background:#fff;border-color:#a6d1c1;outline:0;transform:translateX(2px);box-shadow:0 7px 20px rgba(18,64,48,.08)}.number{display:grid;width:28px;height:28px;place-items:center;color:#fff;font:700 13px Georgia,serif;background:var(--green);border-radius:50%}.copy{display:flex;min-width:0;flex-direction:column;gap:3px}.copy b,.copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.copy b{font-size:12.5px}.copy span{color:var(--muted);font-size:11px}.quality{padding:3px 6px;color:var(--green-dark);font-size:9px;font-weight:700;background:var(--mint);border-radius:999px}.quality.review{color:var(--amber);background:#fff0d7}.footnote{padding:11px 20px;color:#75817d;font-size:10px;text-align:center;background:#f1f6f3;border-top:1px solid var(--line)}
+    .map-stage{position:relative;min-width:0;min-height:0;background:#dbe7e2}#map{position:absolute;inset:0}.topbar{position:absolute;z-index:3;top:22px;right:22px;left:22px;display:flex;align-items:center;justify-content:space-between;gap:16px;pointer-events:none}.title-card{display:flex;flex-direction:column;padding:10px 14px;background:rgba(255,255,255,.93);border:1px solid rgba(200,217,210,.9);border-radius:12px;box-shadow:0 8px 30px rgba(21,56,44,.12);backdrop-filter:blur(12px)}.title-card span{color:var(--green);font-size:10px;font-weight:700;letter-spacing:.08em}.title-card b{margin-top:2px;font:700 17px Georgia,"Songti SC",serif}.fit{padding:10px 14px;color:#fff;font-size:12px;font-weight:700;background:var(--green);border:0;border-radius:10px;box-shadow:0 8px 24px rgba(13,117,88,.25);cursor:pointer;pointer-events:auto}.fit:hover,.fit:focus-visible{background:var(--green-dark);outline:3px solid rgba(13,117,88,.2)}
+    .legend{position:absolute;z-index:3;right:22px;bottom:24px;display:flex;flex-direction:column;gap:5px;padding:10px 12px;color:#5e6d68;font-size:10px;background:rgba(255,255,255,.93);border:1px solid rgba(200,217,210,.9);border-radius:10px;box-shadow:0 6px 22px rgba(21,56,44,.1);backdrop-filter:blur(10px)}.legend b{color:var(--ink)}.legend i{display:inline-block;width:8px;height:8px;margin-right:5px;background:var(--green);border-radius:50%}
+    .company-marker{appearance:none;display:flex;align-items:center;gap:5px;max-width:230px;padding:0;color:var(--ink);text-align:left;background:transparent;border:0;cursor:pointer;filter:drop-shadow(0 4px 6px rgba(24,48,40,.18));transition:.15s}.company-marker.left{flex-direction:row-reverse}.company-marker:hover,.company-marker:focus-visible,.company-marker.active{z-index:20;outline:0;filter:drop-shadow(0 7px 11px rgba(24,48,40,.25));transform:translateY(-2px)}.marker-pin{display:grid;width:27px;height:27px;flex:0 0 27px;place-items:center;color:#fff;font-size:11px;font-weight:800;background:var(--green);border:2px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(9,66,49,.28)}.marker-label{display:block;max-width:190px;padding:5px 7px;font-size:10px;font-weight:700;line-height:1.3;background:rgba(255,255,255,.96);border:1px solid rgba(178,202,193,.95);border-radius:6px}.company-marker.active .marker-pin{background:#c26312}.company-marker.active .marker-label{color:#7a3a05;border-color:#e2ab75}
+    .mapboxgl-popup-content{padding:14px;color:var(--ink);border:1px solid #c9dcd5;border-radius:12px;box-shadow:0 14px 36px rgba(22,56,45,.18)}.popup h3{margin:0 0 8px;font-size:14px}.popup dl{display:grid;grid-template-columns:62px 1fr;gap:5px 8px;margin:0;font-size:11px}.popup dt{color:var(--muted)}.popup dd{margin:0}.error{position:absolute;z-index:8;top:50%;left:50%;width:min(420px,calc(100% - 40px));padding:18px 20px;color:#7a2e22;text-align:center;background:#fff7f4;border:1px solid #efc5bb;border-radius:12px;transform:translate(-50%,-50%)}
+    @media(max-width:900px){.shell{grid-template-columns:1fr;grid-template-rows:42vh 58vh}.panel{border-right:0;border-bottom:1px solid var(--line)}.heading{padding:15px 18px 11px}.heading h1{margin:7px 0 4px;font-size:24px}.heading p,.footnote{display:none}.summary{margin-top:9px}.point-list{display:grid;grid-auto-columns:minmax(250px,72vw);grid-auto-flow:column;gap:7px;padding:9px 12px 12px;overflow-x:auto;overflow-y:hidden}.point-list li+li{margin-top:0}.point{height:58px;background:#fff;border-color:#e0e8e5}.topbar{top:12px;right:12px;left:12px}.title-card b{font-size:14px}.legend{display:none}}
+    @media(max-width:540px){.summary div:nth-child(2){display:none}.summary{grid-template-columns:1fr}.marker-label{max-width:128px;font-size:9px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <aside class="panel" aria-label="8月检查点位清单">
+      <header class="heading">
+        <div class="eyebrow"><i></i>嘉定区 · 8月计划</div>
+        <h1>企业检查点位</h1>
+        <p>共 10 家企业，点击清单或地图标签可聚焦查看。</p>
+        <div class="summary"><div><b>10</b><span>检查点位</span></div><div><b>9</b><span>门址精确匹配</span></div></div>
+      </header>
+      <ol class="point-list" id="pointList"></ol>
+      <div class="footnote">坐标由天地图地理编码生成；底图由 Mapbox 提供。</div>
+    </aside>
+    <section class="map-stage" aria-label="8月企业检查点位地图">
+      <div id="map"></div>
+      <div class="topbar"><div class="title-card"><span>上海市嘉定区</span><b>8月检查点位分布</b></div><button class="fit" id="fitButton">查看全部点位</button></div>
+      <div class="legend"><b><i></i>检查企业</b><span>标签内数字对应清单序号</span></div>
+      <div class="error" id="error" hidden></div>
+    </section>
+  </main>
+  <script>
+    const data=window.AUGUST_INSPECTION_MAP_DATA;
+    const config=window.AUGUST_INSPECTION_MAP_CONFIG;
+    const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+    const errorBox=document.getElementById("error");
+    const fail=message=>{errorBox.textContent=message;errorBox.hidden=false};
+    if(!data?.points?.length||!config?.mapboxAccessToken||config.mapboxAccessToken.includes("__MAPBOX")){
+      fail("地图配置尚未完成，请稍后刷新页面。");
+      throw new Error("Missing map data or Mapbox configuration");
+    }
+
+    const list=document.getElementById("pointList");
+    list.innerHTML=data.points.map(point=>`<li><button class="point" type="button" data-point-id="${point.id}"><span class="number">${point.id}</span><span class="copy"><b>${esc(point.company)}</b><span>${esc(point.address)}</span></span><span class="quality ${point.geocodeScore<90?"review":""}" title="${esc(point.geocodeLevel)} · 匹配分 ${point.geocodeScore}">${point.geocodeScore<90?"企业点":"门址"}</span></button></li>`).join("");
+
+    mapboxgl.accessToken=config.mapboxAccessToken;
+    const map=new mapboxgl.Map({container:"map",style:"mapbox://styles/mapbox/streets-v12",center:[121.285,31.282],zoom:11.2,attributionControl:false});
+    map.addControl(new mapboxgl.NavigationControl({showCompass:true}),"bottom-right");
+    map.addControl(new mapboxgl.AttributionControl({compact:true}),"bottom-left");
+    const bounds=new mapboxgl.LngLatBounds();
+    const markerElements=new Map();
+    const fitAll=()=>map.fitBounds(bounds,{padding:{top:88,right:180,bottom:88,left:180},maxZoom:12.8,duration:850});
+
+    function selectPoint(point){
+      document.querySelectorAll(".point").forEach(button=>button.classList.toggle("active",Number(button.dataset.pointId)===point.id));
+      markerElements.forEach((element,id)=>element.classList.toggle("active",id===point.id));
+      map.flyTo({center:point.coordinates,zoom:15.2,speed:1.35,essential:true});
+    }
+
+    data.points.forEach(point=>{
+      bounds.extend(point.coordinates);
+      const marker=document.createElement("button");
+      marker.type="button";
+      marker.className=`company-marker ${point.id%2?"right":"left"}`;
+      marker.setAttribute("aria-label",`查看${point.company}`);
+      marker.innerHTML=`<span class="marker-pin">${point.id}</span><span class="marker-label">${esc(point.company)}</span>`;
+      marker.addEventListener("click",()=>selectPoint(point));
+      const popup=new mapboxgl.Popup({offset:22,maxWidth:"350px"}).setHTML(`<div class="popup"><h3>${esc(point.company)}</h3><dl><dt>地址</dt><dd>${esc(point.address)}</dd><dt>坐标</dt><dd>${point.coordinates.join(", ")}</dd><dt>编码质量</dt><dd>${esc(point.geocodeLevel)} · ${point.geocodeScore}分</dd></dl></div>`);
+      new mapboxgl.Marker({element:marker,anchor:"bottom"}).setLngLat(point.coordinates).setPopup(popup).addTo(map);
+      markerElements.set(point.id,marker);
+    });
+
+    list.addEventListener("click",event=>{
+      const button=event.target.closest("button[data-point-id]");
+      if(!button)return;
+      const point=data.points.find(item=>item.id===Number(button.dataset.pointId));
+      if(point)selectPoint(point);
+    });
+    document.getElementById("fitButton").addEventListener("click",fitAll);
+    map.on("load",fitAll);
+    map.on("error",event=>{if(event?.error?.message)fail("底图加载失败，请刷新页面或检查网络连接。");});
+  </script>
+</body>
+</html>

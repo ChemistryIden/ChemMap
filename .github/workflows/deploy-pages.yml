@@ -47,6 +47,12 @@ jobs:
               raise SystemExit("Mapbox token placeholder is missing")
           mapbox_config.write_text(mapbox_source.replace(mapbox_placeholder, mapbox_token), encoding="utf-8")
 
+          august_config = Path("_site/august-inspection-map/runtime-config.js")
+          august_source = august_config.read_text(encoding="utf-8")
+          if mapbox_placeholder not in august_source:
+              raise SystemExit("August inspection map token placeholder is missing")
+          august_config.write_text(august_source.replace(mapbox_placeholder, mapbox_token), encoding="utf-8")
+
           amap_config = Path("_site/recent-vehicle-camera-map-amap/runtime-config.js")
           amap_source = amap_config.read_text(encoding="utf-8")
           amap_values = {
