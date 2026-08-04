@@ -107,7 +107,7 @@
     const KEY_LOCATIONS=[
       {name:'嘉行公路2605号',detail:'上海互赢物流 · 重点常去点位',coordinates:[121.24518649,31.44187211],locationNote:'按已确认位置：宝钱公路—嘉行公路路口北侧稍偏西静态定位',labelSide:'right'},
       {name:'励学路1111号',detail:'上海品亚实业 · 重点常去点位',coordinates:[121.2986828290549,31.363326354318957],locationNote:'门牌地址静态定位',labelSide:'right'},
-      {name:'丰兆路122号',detail:'车辆高频起止区域 · 重点常去点位',coordinates:[121.27344834,31.36405803],locationNote:'丰兆路—申裕路邻近卡口定位',labelSide:'left'}
+      {name:'丰兆路122号',detail:'车辆高频起止区域 · 重点常去点位',coordinates:[121.275054,31.361835],locationNote:'红旗名称保留122号；坐标按丰兆路118号高置信门牌结果静态定位',labelSide:'left'}
     ];
     if(!DATA||!CONFIG?.mapboxAccessToken){document.body.innerHTML='<div class="empty">地图数据或 Mapbox 配置尚未就绪。</div>';throw new Error('missing map data/config')}
 
@@ -320,11 +320,16 @@
     function playTrajectory(){if(!trajectoryRoute)return;if(trajectoryProgressValue>=1)updateTrajectoryMap(0);if(trajectoryPlaying){stopTrajectoryPlayback();return}trajectoryPlaying=true;trajectoryAnimationStarted=performance.now();document.getElementById('trajectoryPlay').textContent='Ⅱ 暂停';trajectoryFrame=requestAnimationFrame(animationTick)}
     function stopTrajectoryPlayback(){trajectoryPlaying=false;if(trajectoryFrame)cancelAnimationFrame(trajectoryFrame);trajectoryFrame=null;if(document.getElementById('trajectoryPlay')&&!document.getElementById('trajectoryPlay').disabled)document.getElementById('trajectoryPlay').textContent=trajectoryProgressValue>0&&trajectoryProgressValue<1?'▶ 继续播放':'▶ 播放疑似路线'}
     function clearTrajectoryMap(){stopTrajectoryPlayback();trajectoryCleared=true;trajectoryProgressValue=0;map.getSource('trajectory-route')?.setData(emptyCollection());map.getSource('trajectory-progress')?.setData(emptyCollection());map.getSource('trajectory-stops')?.setData(emptyCollection());trajectoryMarker?.remove();trajectoryMarker=null;document.getElementById('trajectoryClock').textContent='轨迹已清除，可再次播放';document.getElementById('trajectoryProgress').value=0}
+    function selectTrajectoryDay(day){
+      activeTrajectory=day;trajectoryRoute=null;clearTrajectoryMap();renderTrajectoryDetails(day);
+      const play=document.getElementById('trajectoryPlay');play.disabled=day.status==='no_movement';play.textContent='▶ 播放疑似路线';
+      document.getElementById('trajectoryClock').textContent=day.status==='no_movement'?'无轨迹可播放':'点击播放后推算路线';document.getElementById('trajectoryMode').textContent='按需显示';
+    }
     function initTrajectoryControls(){
       const select=document.getElementById('trajectoryDate'),play=document.getElementById('trajectoryPlay'),clear=document.getElementById('trajectoryClear'),slider=document.getElementById('trajectoryProgress');
       if(!TRAJECTORIES?.days?.length){select.innerHTML='<option>轨迹数据缺失</option>';select.disabled=true;play.disabled=true;document.getElementById('trajectorySummary').textContent='未加载 trajectory_data.js';return}
       select.innerHTML=TRAJECTORIES.days.map(day=>`<option value="${day.date}">${day.date}${day.status==='no_movement'?' · 熄火/无记录':` · ${day.camera_event_count}条卡口`}</option>`).join('');const defaultDay=[...TRAJECTORIES.days].reverse().find(day=>day.status==='available')||TRAJECTORIES.days[0];select.value=defaultDay.date;
-      select.onchange=()=>prepareTrajectory(TRAJECTORIES.days.find(day=>day.date===select.value));play.onclick=playTrajectory;clear.onclick=clearTrajectoryMap;slider.oninput=()=>{if(!trajectoryRoute)return;stopTrajectoryPlayback();updateTrajectoryMap(Number(slider.value)/1000)};renderTrajectoryDetails(defaultDay);activeTrajectory=defaultDay;
+      select.onchange=()=>selectTrajectoryDay(TRAJECTORIES.days.find(day=>day.date===select.value));play.onclick=async()=>{if(trajectoryPlaying){playTrajectory();return}if(activeTrajectory?.status!=='available')return;if(!trajectoryRoute)await prepareTrajectory(activeTrajectory);playTrajectory()};clear.onclick=clearTrajectoryMap;slider.oninput=()=>{if(!trajectoryRoute)return;stopTrajectoryPlayback();updateTrajectoryMap(Number(slider.value)/1000)};selectTrajectoryDay(defaultDay);
     }
 
     function showPopup(feature){
@@ -368,7 +373,7 @@
 
     initTrajectoryControls();
     applyDateFilter();
-    map.on('load',()=>{addLayers();fitFiltered();if(activeTrajectory?.status==='available')prepareTrajectory(activeTrajectory,{fit:false})});
+    map.on('load',()=>{addLayers();fitFiltered()});
     map.on('style.load',()=>addLayers());
   </script>
 </body>
